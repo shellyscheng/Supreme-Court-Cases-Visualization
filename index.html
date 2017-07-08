@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+<head>
+  
+  <title>Supreme Court Case Term 2016</title>
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+<!-- 
+THESE ARE CALLS TO DIFFERENT EXTERNAL FILES
+LISA HAS A CSS STYLESHEET THAT YOU NEED
+THE NEXT IS THE JAVASCRIPT LIBRARY FOR LEAFLET
+AND THE FINAL ONE IS THE LIBRARY FOR JQUERY, WHICH I USE FOR THE PULLDOWN MENU.
+ -->
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" integrity="sha512-07I2e+7D8p6he1SIM+1twR5TIrhUQn9+I6yjqD53JQjFiMf8EtC93ty0/5vJTZGF8aAocvHYNEDJajGdNx1IsQ==" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js" integrity="sha512-A7vV8IFfih/D732iSSKi20u/ooOfj/AGehOKq0f4vLT1Zr2Y+RX7C+w8A1gaSasGtRUZpF/NZgzSAu4/Gc41Lg==" crossorigin=""></script>
+
+  <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+<!-- 
+THESE ARE CSS STYLES WHAT YOU SHOULD FREELY PLAY WITH
+THE STYLES THAT BEGIN WITH # RELATE TO IDS, THE ONES THAT BEGIN WITH . RELATE TO CLASSES
+WHEN YOU GOT EVERYTHING WORKING YOU CAN PLAY WITH THESE AND ADD TO THESE 
+TO MAKE YOUR FONTS AND LAYOUTS NICE AND LOVELY
+ -->
+
+  <style>
+
+#main{
+position:relative;
+}
+
+div#first{
+background-image: url("supremecourtpic.jpg");
+opacity:0.1;
+width:1450px;
+height:680px;
+}
+
+div#second{
+width:300px;
+height:300px;
+position:absolute;
+top: 0;
+left:0;
+}
+
+::-webkit-scrollbar {
+    width: 0px;  /* remove scrollbar space */
+    background: transparent;  /* optional: just make scrollbar invisible */
+}
+  #map {position: absolute; top: 20px; left: 20px; width: 700px; height: 650px; z-index:1;}
+  #articlePlace {position: absolute; left: 750px; top: 5px; margin:15px; width: 615px; height: 650px; overflow: scroll;
+    overflow-x: hidden; z-index:5; } 
+    #select-menu{position: absolute; left: 80px; top: 30px;  z-index:10;} 
+.info { padding: 6px 8px; font: 14px/16px Arial, Helvetica, sans-serif; background: white; background: rgba(255,255,255,0.8); box-shadow: 0 0 15px rgba(0,0,0,0.2); border-radius: 5px; } .info h4 { margin: 0 0 5px; color: #777; }
+.legend { text-align: left; line-height: 18px; color: #555; } .legend i { width: 18px; height: 18px; float: left; margin-right: 8px; opacity: 0.7; }
+h1 {font-size: 27px; padding: 0px; text-align: center; font-family: Georgia}
+h2 {font-size: 25px; padding: 0px; text-align: center; font-family: 'Arial Black'; line-height: 35px; color:#672800; margin-bottom: 30px;}
+h3 {font-size: 18px; font-family: Georgia;text-align: center; }
+h4 {font-family: Georgia}
+h5 {text-align: center; font-family: Georgia; color: #BB3000;}
+h6 {font-size: 15px; font-family: Georgia; color: #501E9F; margin-top:10px; margin-bottom: 0px; }
+b {font-family: Georgia;}
+p {font-size: 15px; font-family: Georgia; line-height: 20px}
+
+
+
+</style>
+</head>
+
+<!-- THE BODY OF THE HTML BEGINS HERE -->
+
+<body>
+
+<!-- 
+HERE IS MY VERY UNBEAUTIFUL BUT FUNCTIONALLY AWESOME DROP-DOWN MENU
+THE ID select–menu IS USED BY THE JQUERY FUNCTION WAY DOWN AT THE BOTTOM
+ -->
+<div id="main">
+<div id="first">
+</div>
+<div id="second">
+
+
+<div id="dropdown">
+<select id="select-menu">
+            
+             <option value="0">All Cases</option>
+             <option value="1">Chief Justice Robert</option>
+             <option value="2">Justice Alito</option>
+             <option value="3">Justice Breyer</option>
+             <option value="4">Justice Ginsburg</option>
+             <option value="5">Justice Gorsuch</option>
+             <option value="6">Justice Kagan</option>
+             <option value="7">Justice Kennedy</option>
+             <option value="8">Justice Sotomayor</option>
+             <option value="9">Justice Thomas</option>
+
+
+ </select>
+</div>
+<!-- 
+THE TWO DIVS BELOW ARE SUPER IMPORTANT: THEY ARE WHERE THE MAP WILL GO, AND YOUR ARTICLE TEXT WILL GO
+YOU WILL CERTAINLY WANT TO STYLE THESE, BOTH THEIR PLACEMENT AND CONTENT 
+WHEN YOU'RE DONE WITH ALL THE FANCY FUNCTIONALITY
+ -->
+
+<div id='map'></div>
+<div id='articlePlace'> 
+<h1>Supreme Court Case Visualization</h1>
+<p> <b>Designer:</b> Shiying Cheng </p>
+
+<p> <b>Data Source:</b> Supreme Court, Oyez Project</p>
+
+</div> 
+
+</div>
+</div>
+
+<!-- 
+THIS IS WHERE THE BROWSER LOADS IN YOUR GEO JASON INFORMATION
+MAKING IN A JAVASCRIPT FILE, RATHER THAN A GEO JASON FILE
+ALLOWS YOU TO LOAD IT LOCALLY WITHOUT DEALING WITH SETTING UP SERVERS ON YOUR MACHINE.
+ -->
+
+<script type="text/javascript" src="points-json.js"></script>
+
+<!-- 
+HERE BEGINS ALL THE SCRIPT THAT SETS UP THE MAP 
+ALL THE COMMENTS FROM HERE WE'LL BE IN JAVASCRIPT COMMENTS //
+ -->
+
+<script type="text/javascript">
+
+// THIS INITIALIZES THE FIRST VARIABLE CALLED MAP
+// THERE IS NO SET VIEW HERE, BECAUSE WE ARE USING FITBOUNDS()
+// TO AUTOMATICALLY CENTER AND ZOOM ON OUR POINTS
+
+
+// THIS SETS THE BASE LAYER OF THE MAP -- USING BACKGROUND TILES
+  var selectedGroup = 0;
+
+  var map = L.map('map').setView([35, -94], 4);
+
+  L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+    maxZoom: 18,
+    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
+      '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+      'Imagery © <a href="http://mapbox.com">Mapbox</a>',
+    id: 'mapbox.light'
+  }).addTo(map);
+
+
+// THESE LINES ADD THE LITTLE INFO WINDOW IN THE UPPER RIGHT CORNER 
+// (YOU CAN CHANGE WHERE GOES BY EDITING THE STYLES FOR #INFO)
+// NOTE THAT "L.CONTIROL()" -- MEANS THAT THIS IS A LEAFLET METHOD
+// FOR CREATING A CONTROL WINDOW.
+
+  var info = L.control();
+
+  info.onAdd = function (map) {
+    this._div = L.DomUtil.create('div', 'info');
+    this.update();
+    return this._div;
+  };
+
+  info.update = function (props) {
+    this._div.innerHTML = '<h4>Case Name</h4>' +  (props ?
+    props.caseName + ' (' + props.docket + ') '
+      : 'Hover on a point');
+  };
+
+  info.addTo(map);
+
+
+// HERE ARE YOUR STYLES FOR THE SHAPES--THERE'RE A LOT OF DIFFERENT CONTROLS
+// EVERYTHING THAT IS SET AS A VALUE MEANS THAT THAT'S STYLE IS FOR EVERY SINGLE POINT
+// THESE LINES:
+//      radius: feature.properties.radius,
+//      fillColor: feature.properties.color
+// SETS THE COLOR AND RADIUS BASED ON WHAT YOU PUT IN YOUR GEOJSON DOC "color:" and "radius:"
+// YOU COULD THEORETICALLY DO THAT FOR EVERY SINGLE ONE OF THE STYLES
+
+  function style(feature) {
+    //var selectedGroup = $('#select-menu').val();
+
+    return {
+      weight: 1,
+      opacity: 1,
+      color: 'black',
+      fillOpacity: 0.5,
+      radius: 7,
+      fillColor: '#' + feature.properties.color[selectedGroup]
+    };
+  }
+// THIS FUNCTION CONTROLS WHAT HAPPENS WHEN YOU HOVER OVER A SHAPE
+// IT CHANGES SOME OF THE STYLES (HIGHLIGHTING THAT SHAPE)
+// AND IT ALSO UPDATES THE TEXT INSIDE THE INFOBOX
+
+  function highlightFeature(e) {
+    var layer = e.target;
+
+    layer.setStyle({
+      weight: 5,
+      color: '#666',
+      fillOpacity: 1
+    });
+
+    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+      layer.bringToFront();
+    }
+
+    info.update(layer.feature.properties);
+  }
+
+// THIS FUNCTION CHANGES THE ARTICLE TEXT ON THE RIGHT SIDE OF THE PAGE
+// IT IS CALLED WHENEVER YOU CLICK ON A SHAPE
+
+  function updateArticle(e) {
+    var layer = e.target;
+    var props = layer.feature.properties;
+    var articleDIV = document.getElementById("articlePlace");
+    articleDIV.innerHTML = 
+    '<h2>' + props.caseName + '</h2>'
+    + '<b>Granted: </b>' + props.granted + ';  <b>Argued: </b>' + props.argued + 
+    ';<b>  Decided: </b>' + props.decided
+
+    +'<h6>' + props.summary + '</h6>'
+
+
+    + '<p><b> How many times each justice speak in this case? </b></p>'
+    + props.article
+
+    + '<h5>' + props.vote + '</h5>';
+
+
+    if (selectedGroup == 0) {
+      articleDIV.innerHTML += '<p> <b>Conclusion: </b>' + props.conclusion + '</p>'
+    }
+
+    else if (selectedGroup == 1) {
+      articleDIV.innerHTML += '<p> <b>What Chief Justice Roberts spoke in this case? </b>' +  props.f_speaker_line['CHIEF JUSTICE ROBERTS'] + '</p>'
+    }
+
+    else if (selectedGroup == 2) {
+      articleDIV.innerHTML += '<p> <b>What Justice Alito spoke in this case? </b>' + props.f_speaker_line['JUSTICE ALITO'] + '</p>'
+    }
+
+    else if (selectedGroup == 3) {
+      articleDIV.innerHTML += '<p> <b>What Justice Breyer spoke in this case? </b>' + props.f_speaker_line['JUSTICE BREYER'] + '</p>'
+    }
+
+     else if (selectedGroup == 4) {
+      articleDIV.innerHTML += '<p> <b>What Justice Ginsburg spoke in this case? </b>' + props.f_speaker_line['JUSTICE GINSBURG'] + '</p>'
+    }
+
+    else if (selectedGroup == 5) {
+      articleDIV.innerHTML += '<p> <b>What Justice Gorsuch spoke in this case? </b>' + props.f_speaker_line['JUSTICE GORSUCH'] + '</p>'
+    }
+
+    else if (selectedGroup == 6) {
+      articleDIV.innerHTML += '<p> <b>What Justice Kagan spoke in this case? </b>' + props.f_speaker_line['JUSTICE KAGAN'] + '</p>'
+    }
+
+    else if (selectedGroup == 7) {
+      articleDIV.innerHTML += '<p> <b>What Justice Kennedy spoke in this case? </b>' + props.f_speaker_line['JUSTICE KENNEDY'] + '</p>'
+    }
+
+    else if (selectedGroup == 8) {
+      articleDIV.innerHTML += '<p> <b>What Justice Sotomayor spoke in this case? </b>' + props.f_speaker_line['JUSTICE SOTOMAYOR'] + '</p>'
+    }
+
+    else if (selectedGroup == 9)
+    {
+      articleDIV.innerHTML += '<p> <b> Justice Thomas did not speak in any of cases in term 2016 </b> </p>'
+    };
+
+
+  }
+
+// THIS PART IS A LITTLE COMPLICATED
+// IT IS CREATING A LAYER FOR YOUR MAP CALLED points
+// IT IS SETTING ALL OF THE ACTIONS THAT ARE GOING TO HAPPEN WHEN YOU HOVER AND CLICK ON YOUR POINTS
+// NOTE THE fitBounds() AT THE END -- THAT CENTERS AND ZOOMS THE MAP BASED ON YOUR POINTS
+
+  var points;
+
+  function resetHighlight(e) {
+    points.resetStyle(e.target);
+    info.update();
+  }
+
+  function zoomToFeature(e) {
+    map.fitBounds(e.target.getBounds());
+  }
+
+  function onEachFeature(feature, layer) {
+    layer.on({
+      mouseover: highlightFeature,
+      mouseout: resetHighlight,
+      click: updateArticle
+    });
+  }
+
+  points = L.geoJson(pointsData, {
+    style: style,
+    pointToLayer: function(feature, latlng) {
+
+        return new L.CircleMarker(latlng);
+
+        //return new L.MarkerClusterGroup();
+
+// add more markers here...
+
+map.addLayer(markers);
+
+    },
+    onEachFeature: onEachFeature
+  }).addTo(map);
+//map.fitBounds(points.getBounds(), {padding: [120,120]});
+
+</script>
+<script>
+// BELOW IS A JQUERY FUNCTION THAT THE TEXT CHANGES IN THE DROP-DOWN MENU
+// AND EXECUTES CHANGES ON THE MAP BASED ON THE GROUP ID OF YOUR SHAPES
+bioList = ["<h1>Supreme Court Cases - October Term 2016</h1> <p> <h3> Shiying Cheng &nbsp &nbsp June, 2017</h3> <h6>This is a simple mapping project, which attempts to cover Supreme Court's cases during the 2016 term year (argument session: April 17, 2017 - April 26, 2017) per justices and location. Based on data from the Oyez Project, an online multimedia archive from the Illinois Institute of Technology's Chicago-Kent College of Law, my map lists basic information about Supreme Court cases and analysis of their oral arguments.</h6> <h6> This project counts how many times each justice speak in each case. In the drop-down menu, users can select individual justice and check what exactly he or she spoke during the oral argument per case. Hope it can be a useful tool for people who are interested in analyzing ideological leaning of Supreme Court justices.</6> <h6> If you have any questions or feedback, feel free to email me at shiying.s.c@gmail.com. You can also visit <a href='http://www.shiying-cheng.com/'>www.shiying-cheng.com</a> to see more of my previous work. </h6> </br> <img src='http://a.abcnews.com/images/Politics/EPA-USA-SUPREME-COURT-JUSTICES-MEM-170601_12x5_1600.jpg' width='600px';> <p> <b>Data Source:</b> <a href='https://www.supremecourt.gov/oral_arguments/argument_transcript.aspx'>Supmeme Court's Offical Website</a>, <a href='https://www.oyez.org/cases/2016'>Oyez Project</a>.</p>",
+
+"<h2>Chief Justice John Robert</h2> <p>  <h6>John Glover Roberts Jr. (born January 27, 1955) is the 17th and current Chief Justice of the United States. He took his seat on September 29, 2005, having been nominated by President George W. Bush after the death of chief justice William Rehnquist. He has been described as having a conservative judicial philosophy in his jurisprudence. </h6> <p> <img src='http://s3-origin-images.politico.com/2012/06/120626_john_roberts1_ap_605.jpg' width='600px';> </p>  <p> Roberts grew up in northwest Indiana and was educated in a private school. He then attended Harvard College and Harvard Law School, where he was a managing editor of the Harvard Law Review. After being admitted to the bar, he served as a law clerk for Henry Friendly and then Rehnquist before taking a position in the attorney general's office during the Reagan Administration. He went on to serve the Reagan administration and the George H. W. Bush administration in the Department of Justice and the Office of the White House Counsel, before spending 14 years in private law practice. During this time, he argued 39 cases before the Supreme Court. Notably, he represented 19 states in United States v. Microsoft. </p> <p>In 2003, Roberts was appointed as a judge of the D.C. Circuit by George W. Bush. During his two-year tenure on the D.C. Circuit, Roberts authored 49 opinions, eliciting two dissents from other judges, and authoring three dissents of his own.[4] In 2005, Roberts was nominated to be an associate justice of the Supreme Court, initially to succeed retiring Sandra Day O'Connor. When Rehnquist died before Roberts's confirmation hearings began, Bush instead nominated Roberts to fill the chief justice position.</p> <p>Roberts has authored the majority opinion in many landmark cases, including Parents Involved in Community Schools v. Seattle School District No. 1, Shelby County v. Holder, and National Federation of Independent Business v. Sebelius.</p>",
+
+  "<h2>Associate Justice Samuel Anthony Alito Jr. </h2> <h6>Samuel Anthony Alito Jr. (born April 1, 1950) is an Associate Justice of the Supreme Court of the United States. He was nominated by President George W. Bush and has served on the court since January 31, 2006.</h6> <p> <img src='http://s3-origin-images.politico.com/2014/07/01/140630_samuel_alito_ap_605.jpg' width='600px';> </p><p> Raised in Hamilton Township, New Jersey and educated at Princeton University and Yale Law School, Alito served as U.S. Attorney for the District of New Jersey and a judge on the United States Court of Appeals for the Third Circuit before joining the Supreme Court. He is the 110th justice, the second Italian-American, and the eleventh Roman Catholic to serve on the court.</p> <p>Alito is considered 'one of the most conservative justices on the Court'. He has described himself as a 'practical originalist'. Alito's majority opinions in landmark cases include McDonald v. Chicago and Burwell v. Hobby Lobby.</p>",
+
+
+  "<h2>Associate Justice Stephen Breyer </h2> <h6>Stephen Gerald Breyer (born August 15, 1938) is an American lawyer, professor, and jurist who serves as an Associate Justice of the Supreme Court of the United States. Appointed by President Bill Clinton in 1994, Breyer is generally associated with the more liberal side of the Court.</h6> <p> <img src='http://i2.cdn.cnn.com/cnnnext/dam/assets/120213104636-justice-stephen-breyer-story-top.jpg' width='600px';></p> <p>Following a clerkship with Supreme Court Associate Justice Arthur Goldberg in 1964, Breyer became well known as a law professor and lecturer at Harvard Law School, starting in 1967. There he specialized in administrative law, writing a number of influential textbooks that remain in use today. He held other prominent positions before being nominated for the Supreme Court, including special assistant to the United States Assistant Attorney General for Antitrust, assistant special prosecutor on the Watergate Special Prosecution Force in 1973, and serving on the First Circuit Court of Appeals from 1980 to 1994. </p> <p>In his 2005 book Active Liberty, Breyer made his first attempt to systematically lay out his views on legal theory, arguing that the judiciary should seek to resolve issues in a manner that encourages popular participation in governmental decisions.</p>",
+
+"<h2>Associate Justice Ruth Bader Ginsburg </h2> <h6>Ruth Bader Ginsburg (born Joan Ruth Bader; March 15, 1933) is an Associate Justice of the Supreme Court of the United States. Ginsburg was appointed by President Bill Clinton and took the oath of office on August 10, 1993. She is the second female justice to be confirmed to the Court (after Sandra Day O'Connor), and one of four female justices to be confirmed (with Sonia Sotomayor and Elena Kagan, who are still serving). </h6> <p> <img src='https://media.npr.org/assets/img/2016/06/02/gettyimages-105065404_wide-f77a288a8400851d900bc419fb5e2d3ff9d0e076.jpg?s=1400' width='600px';> </p> <p>Following Justice O'Connor's retirement, and prior to Justice Sotomayor joining the Court, Ginsburg was the only female justice on the Supreme Court. During that time, Ginsburg became more forceful with her dissents, noted by legal observers and in popular culture. She is generally viewed as belonging to the liberal wing of the Court. Notable cases Ginsburg has authored include United States v. Virginia, Olmstead v. L.C., and Friends of the Earth Inc. v. Laidlaw Environmental Services, Inc.</p> <p>Ginsburg was born in Brooklyn, New York to Russian Jewish immigrants. She lost her older sister as a young child as well as her mother, one of her biggest sources of encouragement, shortly before graduating from high school. She was a wife and mother before starting law school at Harvard, where she was one of the few women in her law school class. Ginsburg transferred to Columbia Law School where she graduated tied for first in her class.</p> <p>Following law school, Ginsburg turned to academia. She was a professor at Rutgers School of Law–Newark and Columbia Law School, teaching civil procedure. Still one of the few women in her field, Ginsburg was paid less than her male colleagues. Ginsburg spent a considerable part of her legal career as an advocate for the advancement of gender equality and women's rights, winning multiple victories arguing before the Supreme Court. She advocated as a volunteer lawyer for the American Civil Liberties Union and was a member of its board of directors and one of its general counsels in the 1970s. In 1980, President Jimmy Carter appointed her to the U.S. Court of Appeals for the District of Columbia Circuit where she served until her elevation to the Supreme Court.</p>", 
+
+"<h2>Associate Justice Neil Gorsuch </h2> <h6>Neil McGill Gorsuch (born August 29, 1967) is an Associate Justice of the Supreme Court of the United States. President Donald Trump nominated Gorsuch to succeed Antonin Scalia.</h6> <p> <img src='https://images.csmonitor.com/csm/2017/02/1028095_1_0216-Neil-Gorsuch.jpg_standard.jpg?alias=standard_900x600' width='600px';></p> <p> Gorsuch is a proponent of textualism in statutory interpretation and originalism in interpreting the U.S. Constitution, and is an advocate of natural law jurisprudence. He is the first justice to serve alongside a justice whom he clerked for (Anthony Kennedy).</p> <p>Gorsuch clerked for Judge David B. Sentelle on the U.S. Court of Appeals for the D.C. Circuit from 1991 to 1992, and then for U.S. Supreme Court Justices Byron White and Anthony Kennedy, from 1993 to 1994. From 1995 to 2005, Gorsuch was in private practice with the law firm of Kellogg, Huber, Hansen, Todd, Evans & Figel. Gorsuch was a Deputy Associate Attorney General at the U.S. Department of Justice from 2005 to his appointment to the Tenth Circuit. Gorsuch was nominated to the United States Court of Appeals for the Tenth Circuit by President George W. Bush on May 10, 2006, to replace Judge David M. Ebel, who took senior status in 2006.</P> <p>He holds a Bachelor of Arts from Columbia University, Juris Doctor from Harvard Law School, and Doctor of Philosophy in Law from University College, Oxford.</p>",
+
+"<h2>Associate Justice Elena Kagan</h2> <h6>Elena Kagan (born April 28, 1960) is an Associate Justice of the Supreme Court of the United States. Kagan is the Court's fourth female justice.</h6> <p> <img src='http://media.salon.com/2010/08/photo_of_elena_kagan_supreme_court_nominee-460x307.jpg' width='600px';> </p> <p>Kagan was born and raised in New York City. After attending Princeton, Oxford, and Harvard Law School, she completed federal Court of Appeals and Supreme Court clerkships. She began her career as a professor at the University of Chicago Law School, leaving to serve as Associate White House Counsel, and later as policy adviser, under President Clinton. After a nomination to the United States Court of Appeals for the D.C. Circuit, which expired without action, she became a professor at Harvard Law School and was later named its first female dean.</p> <p>In 2009, Kagan became the first female Solicitor General. On May 10, 2010, President Barack Obama nominated her to the Supreme Court to fill the vacancy arising from the impending retirement of Justice John Paul Stevens, and she resigned her position as Solicitor General in August 2010 upon her confirmation to the Supreme Court. After confirmation, Kagan was sworn in on August 7, 2010, by Chief Justice John G. Roberts in a private ceremony. Kagan's formal investiture ceremony before a special sitting of the United States Supreme Court took place on October 1, 2010.</p>",
+
+"<h2>Associate Justice Anthony Kennedy</h2> <h6>Anthony McLeod Kennedy (born July 23, 1936) is the senior Associate Justice of the Supreme Court of the United States who was nominated by President Ronald Reagan on November 11, 1987, and took the oath of office on February 18, 1988.</h6> <p> <img src='http://www.slate.com/content/dam/slate/articles/news_and_politics/jurisprudence/2017/02/170203_JURIS_kennedy.jpg.CROP.promo-xlarge2.jpg' width='600px';> </p> <p>Kennedy became the most senior Associate Justice on the court following the death of Antonin Scalia in February 2016. Since the retirement of Sandra Day O'Connor in 2006, he has been the swing vote on many of the Court's 5–4 decisions. He has authored the majority opinion in many of these cases, including Boumediene v. Bush and Citizens United v. FEC. Kennedy wrote in part the per curiam majority opinions in Planned Parenthood v. Casey and Bush v. Gore. He is also notable for his majority opinions in each of the Court's landmark gay rights cases: Romer v. Evans, Lawrence v. Texas, United States v. Windsor, and Obergefell v. Hodges.</p>",
+
+"<h2>Associate Justice Sonia Sotomayor</h2> <h6>Sonia Maria Sotomayor (born June 25, 1954) is an Associate Justice of the Supreme Court of the United States, serving since August 2009. She has the distinction of being its first justice of Hispanic heritage, the first Latina, its third female justice, and its twelfth Roman Catholic justice.</h6> <p> <img src='https://media.npr.org/assets/img/2013/01/14/sotomayor_001_wide-224b79a1649a5807a04c6545695c6c2b9c5905ea.jpg?s=1400' width='600px';> </p> <p>Sotomayor was born in The Bronx, New York City, to Puerto Rican-born parents. Her father died when she was nine, and she was subsequently raised by her mother. Sotomayor graduated summa cum laude from Princeton University in 1976 and received her J.D. from Yale Law School in 1979, where she was an editor at the Yale Law Journal. She worked as an assistant district attorney in New York for four and a half years before entering private practice in 1984. She played an active role on the boards of directors for the Puerto Rican Legal Defense and Education Fund, the State of New York Mortgage Agency, and the New York City Campaign Finance Board.</p> <p>Sotomayor was nominated to the U.S. District Court for the Southern District of New York by President George H. W. Bush in 1991; confirmation followed in 1992. In 1997, she was nominated by President Bill Clinton to the U.S. Court of Appeals for the Second Circuit. Her nomination was slowed by the Republican majority in the United States Senate, but she was eventually confirmed in 1998. On the Second Circuit, Sotomayor heard appeals in more than 3,000 cases and wrote about 380 opinions. Sotomayor has taught at the New York University School of Law and Columbia Law School.</p> <p>In May 2009, President Barack Obama nominated Sotomayor to the Supreme Court following the retirement of Justice David Souter. Her nomination was confirmed by the Senate in August 2009 by a vote of 68–31. Sotomayor has supported, while on the court, the informal liberal bloc of justices when they divide along the commonly perceived ideological lines. During her tenure on the Supreme Court, Sotomayor has been identified with concern for the rights of defendants, calls for reform of the criminal justice system, and making impassioned dissents on issues of race, gender and ethnic identity.</p>",
+
+"<h2>Associate Justice Clarence Thomas</h2> <h6>Clarence Thomas (born June 23, 1948) is an American judge, lawyer, and government official who currently serves as an Associate Justice of the Supreme Court of the United States. Thomas succeeded Thurgood Marshall and is the second African American to serve on the court.</h6> <p> <img src='https://static01.nyt.com/images/2012/09/18/us/politics/18bar1/18bar1-superJumbo.jpg' width='600px';> </p> <p>Thomas grew up in Savannah, Georgia, and was educated at the College of the Holy Cross and at Yale Law School. In 1974, he was appointed an Assistant Attorney General in Missouri and subsequently practiced law there in the private sector. In 1979, he became a legislative assistant to Senator John Danforth (R-MO) and in 1981 was appointed Assistant Secretary for Civil Rights at the U.S. Department of Education. In 1982, President Ronald Reagan appointed Thomas Chairman of the Equal Employment Opportunity Commission (EEOC).</p> <p>In 1990, President George H. W. Bush nominated Thomas for a seat on the United States Court of Appeals for the District of Columbia Circuit. He served in that role for 16 months and on July 1, 1991, was nominated by Bush to fill Marshall's seat on the United States Supreme Court. Thomas's confirmation hearings were bitter and intensely fought, centering on an accusation that he had sexually harassed attorney Anita Hill, a subordinate at the Department of Education and subsequently at the EEOC. The U.S. Senate ultimately confirmed Thomas by a vote of 52–48.</p><p>Since joining the court, Thomas has taken a textualist approach, seeking to uphold the original meaning of the United States Constitution and statutes. He is generally viewed as the most conservative member of the court.Thomas is also known for his practice of rarely speaking during oral arguments.</p>"
+  ]
+
+
+  $(document).ready(function () {
+      $('#select-menu').change(function () {
+    selectedGroup = $('#select-menu').val();
+
+    var articleDIV = document.getElementById("articlePlace");
+    articleDIV.innerHTML = bioList[selectedGroup]
+
+
+
+    points.eachLayer(function (layer) 
+    {
+      array = layer.feature.properties.speak_list
+
+      // if (selectedGroup == 0)
+      // {
+     //    map.addLayer(layer);
+     //  } 
+
+     //  else 
+
+     if (array.indexOf(selectedGroup.toString()) !== -1 ) 
+       {
+          map.addLayer(layer)
+          layer.setStyle({
+            fillColor: '#' + layer.feature.properties.color[selectedGroup],
+          });
+
+          //console.log(array.indexOf(selectedGroup.toString()))
+      // If the layer's id is different from the selected one, remove it from the map
+       }
+        else {
+           map.removeLayer(layer);
+          }
+        
+          
+       
+    });
+
+  });
+  $('#select-menu').val(0).change()
+  });
+</script>
+
+
+</body>
+</html>
