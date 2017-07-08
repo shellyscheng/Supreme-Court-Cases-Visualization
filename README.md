@@ -5,3 +5,5 @@ This is a simple mapping project during my study at Columbia Journalism School. 
 This project counts how many times each justice speak in each case. In the drop-down menu, users can select individual justice and check what exactly he or she spoke during the oral argument per case. Hope it can be a useful tool for people who are interested in analyzing ideological leaning of Supreme Court justices.
 
 If you have any questions or feedback, feel free to email me at shiying.s.c@gmail.com. You can also visit www.shiying-cheng.com to see more of my previous work.
+
+Project is visible at https://shiyingcheng.github.io/SupremeCourtCasesVisualization/
