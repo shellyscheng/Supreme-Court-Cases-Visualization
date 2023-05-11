@@ -6,4 +6,4 @@ This project counts how many times each justice speak in each case. In the drop-
 
 If you have any questions or feedback, feel free to email me at shiying.s.c@gmail.com. You can also visit www.shiying-cheng.com to see more of my previous work.
 
-Project is visible at https://shiyingcheng.github.io/Supreme-Court-Cases-Visualization/
+Project is visible at https://shellyscheng.github.io/Supreme-Court-Cases-Visualization/
